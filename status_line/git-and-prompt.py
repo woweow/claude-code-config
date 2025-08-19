@@ -160,6 +160,21 @@ def get_session_prompt(session_id):
         return None
 
 
+def format_cwd_section(cwd):
+    """Format current working directory with color and truncation"""
+    if not cwd:
+        return f"{Colors.WHITE}📁 unknown{Colors.RESET}"
+    
+    # Use the full path
+    dir_path = cwd
+    
+    # If it's too long, truncate it from the beginning
+    if len(dir_path) > 50:
+        dir_path = "..." + dir_path[-47:]
+    
+    return f"{Colors.CYAN}📁 {dir_path}{Colors.RESET}"
+
+
 def format_prompt_section(prompt):
     """Format prompt with truncation and color"""
     if not prompt:
@@ -181,6 +196,10 @@ def main():
         # Read input from stdin
         input_data = json.loads(sys.stdin.read())
         session_id = input_data.get('session_id')
+        cwd = input_data.get('cwd')
+        
+        # Get directory information
+        cwd_section = format_cwd_section(cwd)
         
         # Get git information
         git_info = get_git_info()
@@ -192,13 +211,13 @@ def main():
         
         # Combine with separator
         separator = f" {Colors.GRAY}|{Colors.RESET} "
-        status_line = git_section + separator + prompt_section
+        status_line = cwd_section + separator + git_section + separator + prompt_section
         
         print(status_line)
         
     except Exception as e:
         # Fallback output in case of unexpected errors
-        print(f"{Colors.RED}🌳 git error | 💭 prompt error{Colors.RESET}")
+        print(f"{Colors.RED}📁 dir error | 🌳 git error | 💭 prompt error{Colors.RESET}")
 
 
 if __name__ == "__main__":
