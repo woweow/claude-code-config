@@ -9,11 +9,12 @@ from pathlib import Path
 class Colors:
     """ANSI color codes for consistent styling"""
     RESET = '\033[0m'
-    BLUE = '\033[94m'      # Git section
+    CYAN = '\033[96m'      # Bright branch name (better for black background)
     GREEN = '\033[92m'     # Clean status
     YELLOW = '\033[93m'    # Modified/ahead behind
     RED = '\033[91m'       # Error states
     PURPLE = '\033[95m'    # Prompt section
+    WHITE = '\033[97m'     # Bright "no prompt" text (better for black background)
     GRAY = '\033[90m'      # Separator
 
 
@@ -101,7 +102,7 @@ def get_git_info():
 def format_git_section(git_info):
     """Format git information with colors and emoji"""
     if not git_info:
-        return f"{Colors.GRAY}🔗 no git{Colors.RESET}"
+        return f"{Colors.WHITE}🌳 no git{Colors.RESET}"
     
     branch = git_info['branch']
     
@@ -136,9 +137,9 @@ def format_git_section(git_info):
     # Only add separator if there are git details to show
     if git_details.strip() != f"{Colors.RESET}":
         separator = f" {Colors.GRAY}|{Colors.RESET} "
-        return f"{Colors.BLUE}🔗 {branch}{Colors.RESET}{separator}{git_details}"
+        return f"{Colors.CYAN}🌳 {branch}{Colors.RESET}{separator}{git_details}"
     else:
-        return f"{Colors.BLUE}🔗 {branch}{Colors.RESET}"
+        return f"{Colors.CYAN}🌳 {branch}{Colors.RESET}"
 
 
 def get_session_prompt(session_id):
@@ -162,7 +163,7 @@ def get_session_prompt(session_id):
 def format_prompt_section(prompt):
     """Format prompt with truncation and color"""
     if not prompt:
-        return f"{Colors.GRAY}💭 no prompt{Colors.RESET}"
+        return f"{Colors.WHITE}💭 no prompt{Colors.RESET}"
     
     # Clean up the prompt (remove excessive whitespace, newlines)
     clean_prompt = ' '.join(prompt.split())
@@ -197,7 +198,7 @@ def main():
         
     except Exception as e:
         # Fallback output in case of unexpected errors
-        print(f"{Colors.RED}🔗 git error | 💭 prompt error{Colors.RESET}")
+        print(f"{Colors.RED}🌳 git error | 💭 prompt error{Colors.RESET}")
 
 
 if __name__ == "__main__":
