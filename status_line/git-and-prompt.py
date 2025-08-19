@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+class Colors:
+    """ANSI color codes for consistent styling"""
+    RESET = '\033[0m'
+    BLUE = '\033[94m'      # Git section
+    GREEN = '\033[92m'     # Clean status
+    YELLOW = '\033[93m'    # Modified/ahead behind
+    RED = '\033[91m'       # Error states
+    PURPLE = '\033[95m'    # Prompt section
+    GRAY = '\033[90m'      # Separator
+
+
+def run_git_command(cmd):
+    """Run git command and return output, handling errors gracefully"""
+    try:
+        result = subprocess.run(
+            cmd, 
+            capture_output=True, 
+            text=True, 
+            cwd=os.getcwd(),
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        return None
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+        return None
+
+
+def get_git_info():
+    """Get git repository information"""
+    # Check if we're in a git repo
+    if not run_git_command(['git', 'rev-parse', '--git-dir']):
+        return None
+    
+    info = {}
+    
+    # Get current branch
+    branch = run_git_command(['git', 'branch', '--show-current'])
+    if not branch:
+        # Fallback for detached HEAD
+        branch = run_git_command(['git', 'rev-parse', '--short', 'HEAD'])
+        if branch:
+            branch = f"HEAD@{branch}"
+        else:
+            branch = "unknown"
+    info['branch'] = branch
+    
+    # Get status (clean/dirty)
+    status_output = run_git_command(['git', 'status', '--porcelain'])
+    info['is_clean'] = status_output == "" if status_output is not None else True
+    
+    # Get ahead/behind info
+    upstream = run_git_command(['git', 'rev-parse', '--abbrev-ref', '@{upstream}'])
+    if upstream:
+        ahead_behind = run_git_command(['git', 'rev-list', '--left-right', '--count', f'{upstream}...HEAD'])
+        if ahead_behind:
+            try:
+                behind, ahead = ahead_behind.split('\t')
+                info['ahead'] = int(ahead)
+                info['behind'] = int(behind)
+            except (ValueError, IndexError):
+                info['ahead'] = 0
+                info['behind'] = 0
+        else:
+            info['ahead'] = 0
+            info['behind'] = 0
+    else:
+        info['ahead'] = 0
+        info['behind'] = 0
+    
+    return info
+
+
+def format_git_section(git_info):
+    """Format git information with colors and emoji"""
+    if not git_info:
+        return f"{Colors.GRAY}🔗 no git{Colors.RESET}"
+    
+    branch = git_info['branch']
+    
+    # Status indicator
+    if git_info['is_clean']:
+        status_color = Colors.GREEN
+        status_indicator = "✓"
+    else:
+        status_color = Colors.YELLOW  
+        status_indicator = "●"
+    
+    # Ahead/behind indicators
+    sync_info = ""
+    if git_info['ahead'] > 0:
+        sync_info += f" ↑{git_info['ahead']}"
+    if git_info['behind'] > 0:
+        sync_info += f" ↓{git_info['behind']}"
+    
+    return f"{Colors.BLUE}🔗 {branch}{Colors.RESET}{status_color}{status_indicator}{sync_info}{Colors.RESET}"
+
+
+def get_session_prompt(session_id):
+    """Get the most recent prompt from session data"""
+    try:
+        if not session_id:
+            return None
+            
+        session_dir = Path.home() / '.claude' / 'session_data' / session_id
+        prompt_file = session_dir / 'most-recent-prompt.txt'
+        
+        if prompt_file.exists():
+            return prompt_file.read_text().strip()
+        
+        return None
+        
+    except Exception:
+        return None
+
+
+def format_prompt_section(prompt):
+    """Format prompt with truncation and color"""
+    if not prompt:
+        return f"{Colors.GRAY}💭 no prompt{Colors.RESET}"
+    
+    # Clean up the prompt (remove excessive whitespace, newlines)
+    clean_prompt = ' '.join(prompt.split())
+    
+    # Truncate if too long
+    if len(clean_prompt) > 200:
+        clean_prompt = clean_prompt[:197] + "..."
+    
+    return f"{Colors.PURPLE}💭 {clean_prompt}{Colors.RESET}"
+
+
+def main():
+    """Main status line function"""
+    try:
+        # Read input from stdin
+        input_data = json.loads(sys.stdin.read())
+        session_id = input_data.get('session_id')
+        
+        # Get git information
+        git_info = get_git_info()
+        git_section = format_git_section(git_info)
+        
+        # Get prompt information  
+        prompt = get_session_prompt(session_id)
+        prompt_section = format_prompt_section(prompt)
+        
+        # Combine with separator
+        separator = f" {Colors.GRAY}|{Colors.RESET} "
+        status_line = git_section + separator + prompt_section
+        
+        print(status_line)
+        
+    except Exception as e:
+        # Fallback output in case of unexpected errors
+        print(f"{Colors.RED}🔗 git error | 💭 prompt error{Colors.RESET}")
+
+
+if __name__ == "__main__":
+    main()
