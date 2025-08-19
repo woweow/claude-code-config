@@ -57,6 +57,25 @@ def get_git_info():
     status_output = run_git_command(['git', 'status', '--porcelain'])
     info['is_clean'] = status_output == "" if status_output is not None else True
     
+    # Get diff stats (lines added/removed)
+    diff_stats = run_git_command(['git', 'diff', '--numstat'])
+    if diff_stats:
+        added, removed = 0, 0
+        for line in diff_stats.split('\n'):
+            if line.strip():
+                parts = line.split('\t')
+                if len(parts) >= 2 and parts[0] != '-' and parts[1] != '-':
+                    try:
+                        added += int(parts[0])
+                        removed += int(parts[1])
+                    except ValueError:
+                        pass
+        info['lines_added'] = added
+        info['lines_removed'] = removed
+    else:
+        info['lines_added'] = 0
+        info['lines_removed'] = 0
+    
     # Get ahead/behind info
     upstream = run_git_command(['git', 'rev-parse', '--abbrev-ref', '@{upstream}'])
     if upstream:
@@ -101,7 +120,25 @@ def format_git_section(git_info):
     if git_info['behind'] > 0:
         sync_info += f" ↓{git_info['behind']}"
     
-    return f"{Colors.BLUE}🔗 {branch}{Colors.RESET}{status_color}{status_indicator}{sync_info}{Colors.RESET}"
+    # Diff stats
+    diff_info = ""
+    if git_info['lines_added'] > 0 or git_info['lines_removed'] > 0:
+        diff_parts = []
+        if git_info['lines_added'] > 0:
+            diff_parts.append(f"+{git_info['lines_added']}")
+        if git_info['lines_removed'] > 0:
+            diff_parts.append(f"-{git_info['lines_removed']}")
+        diff_info = f" ({','.join(diff_parts)})"
+    
+    # Build git details section
+    git_details = f"{status_color}{status_indicator}{sync_info}{diff_info}{Colors.RESET}"
+    
+    # Only add separator if there are git details to show
+    if git_details.strip() != f"{Colors.RESET}":
+        separator = f" {Colors.GRAY}|{Colors.RESET} "
+        return f"{Colors.BLUE}🔗 {branch}{Colors.RESET}{separator}{git_details}"
+    else:
+        return f"{Colors.BLUE}🔗 {branch}{Colors.RESET}"
 
 
 def get_session_prompt(session_id):
