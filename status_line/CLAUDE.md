@@ -23,6 +23,13 @@ Input comes from stdin and is formatted like:
   "version": "1.0.80",
   "output_style": {
     "name": "default"
+  },
+  "cost": {
+    "total_cost_usd": 0.01234,
+    "total_duration_ms": 45000,
+    "total_api_duration_ms": 2300,
+    "total_lines_added": 156,
+    "total_lines_removed": 23
   }
 }
 ```

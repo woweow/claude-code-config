@@ -175,6 +175,18 @@ def format_cwd_section(cwd):
     return f"{Colors.CYAN}📁 {dir_path}{Colors.RESET}"
 
 
+def format_cost_section(cost_data):
+    """Format cost information with money bag emoji"""
+    cost = 0.0
+    if cost_data:
+        cost = cost_data.get('total_cost_usd', 0.0)
+    
+    # Format cost as currency (always show at least $0.00)
+    cost_str = f"${cost:.2f}"
+    
+    return f"{Colors.YELLOW}💰 {cost_str}{Colors.RESET}"
+
+
 def format_prompt_section(prompt):
     """Format prompt with truncation and color"""
     if not prompt:
@@ -197,6 +209,7 @@ def main():
         input_data = json.loads(sys.stdin.read())
         session_id = input_data.get('session_id')
         cwd = input_data.get('cwd')
+        cost_data = input_data.get('cost')
         
         # Get directory information
         cwd_section = format_cwd_section(cwd)
@@ -205,13 +218,18 @@ def main():
         git_info = get_git_info()
         git_section = format_git_section(git_info)
         
+        # Get cost information (always displayed)
+        cost_section = format_cost_section(cost_data)
+        
         # Get prompt information  
         prompt = get_session_prompt(session_id)
         prompt_section = format_prompt_section(prompt)
         
         # Combine with separator
         separator = f" {Colors.GRAY}|{Colors.RESET} "
-        status_line = cwd_section + separator + git_section + separator + prompt_section
+        sections = [cwd_section, git_section, cost_section, prompt_section]
+        
+        status_line = separator.join(sections)
         
         print(status_line)
         
