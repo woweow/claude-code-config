@@ -8,14 +8,13 @@
     "API_TIMEOUT_MS": "600000"
   },
   "includeCoAuthoredBy": false,
-  "model": "opusplan",
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/coding/claude-config/main/hooks/session_start.py"
+            "command": "uv run ~/coding/personal/claude-config/main/hooks/session_start.py"
           }
         ]
       }
@@ -34,12 +33,18 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run ~/coding/claude-config/main/status_line/git-and-prompt.py",
+    "command": "uv run ~/coding/personal/claude-config/main/status_line/git-and-prompt.py",
     "padding": 0
   },
+  "enabledPlugins": {
+    "token-optimized-builder@brogers-plugins": true
+  },
+  "alwaysThinkingEnabled": false,
   "defaultModel": "opusplan",
   "feedbackSurveyState": {
     "lastShownTime": 1754070025091
   },
-  "additionalDirectories": []
+  "additionalDirectories": [
+    "~/additionalClaudeDirs/"
+  ]
 }
