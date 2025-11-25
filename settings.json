@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/coding/personal/claude-config/main/hooks/session_start.py"
+            "command": "python3 ~/coding/personal/claude-config/main/hooks/session_start.py"
           }
         ]
       }
@@ -33,7 +33,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run ~/coding/personal/claude-config/main/status_line/git-and-prompt.py",
+    "command": "python3 ~/coding/personal/claude-config/main/status_line/git-and-prompt.py",
     "padding": 0
   },
   "enabledPlugins": {
