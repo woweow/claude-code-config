@@ -175,15 +175,46 @@ def format_cwd_section(cwd):
     return f"{Colors.CYAN}📁 {dir_path}{Colors.RESET}"
 
 
+def format_context_section(context_data):
+    """Format context window usage as percentage"""
+    if not context_data:
+        return f"{Colors.WHITE}📚 0%{Colors.RESET}"
+
+    context_size = context_data.get('context_window_size', 0)
+    current_usage = context_data.get('current_usage')
+
+    if not current_usage or context_size == 0:
+        return f"{Colors.WHITE}📚 0%{Colors.RESET}"
+
+    # Calculate total tokens used (input + cache creation + cache read)
+    input_tokens = current_usage.get('input_tokens', 0)
+    cache_creation = current_usage.get('cache_creation_input_tokens', 0)
+    cache_read = current_usage.get('cache_read_input_tokens', 0)
+    current_tokens = input_tokens + cache_creation + cache_read
+
+    # Calculate percentage
+    percent_used = (current_tokens * 100) // context_size
+
+    # Color based on usage
+    if percent_used > 80:
+        color = Colors.RED
+    elif percent_used > 60:
+        color = Colors.YELLOW
+    else:
+        color = Colors.GREEN
+
+    return f"{color}📚 {percent_used}%{Colors.RESET}"
+
+
 def format_cost_section(cost_data):
     """Format cost information with money bag emoji"""
     cost = 0.0
     if cost_data:
         cost = cost_data.get('total_cost_usd', 0.0)
-    
+
     # Format cost as currency (always show at least $0.00)
     cost_str = f"${cost:.2f}"
-    
+
     return f"{Colors.YELLOW}💰 {cost_str}{Colors.RESET}"
 
 
@@ -210,32 +241,36 @@ def main():
         session_id = input_data.get('session_id')
         cwd = input_data.get('cwd')
         cost_data = input_data.get('cost')
-        
+        context_data = input_data.get('context_window')
+
         # Get directory information
         cwd_section = format_cwd_section(cwd)
-        
+
         # Get git information
         git_info = get_git_info()
         git_section = format_git_section(git_info)
-        
+
+        # Get context usage information (before cost)
+        context_section = format_context_section(context_data)
+
         # Get cost information (always displayed)
         cost_section = format_cost_section(cost_data)
-        
-        # Get prompt information  
+
+        # Get prompt information
         prompt = get_session_prompt(session_id)
         prompt_section = format_prompt_section(prompt)
-        
-        # Combine with separator
+
+        # Combine with separator (context before cost)
         separator = f" {Colors.GRAY}|{Colors.RESET} "
-        sections = [cwd_section, git_section, cost_section, prompt_section]
-        
+        sections = [cwd_section, git_section, context_section, cost_section, prompt_section]
+
         status_line = separator.join(sections)
-        
+
         print(status_line)
-        
+
     except Exception as e:
         # Fallback output in case of unexpected errors
-        print(f"{Colors.RED}📁 dir error | 🌳 git error | 💭 prompt error{Colors.RESET}")
+        print(f"{Colors.RED}📁 dir error | 🌳 git error | 📚 context error | 💰 cost error | 💭 prompt error{Colors.RESET}")
 
 
 if __name__ == "__main__":
